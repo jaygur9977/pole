@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-   
 </head>
 <body>
     <!-- Login Screen -->
@@ -126,32 +125,12 @@
                 <div class="blackout-control">
                     <h3><i class="fas fa-bolt"></i> Blackout Control</h3>
                     <p>Manually trigger blackout for specific poles</p>
-                    <div class="form-group">
-                        <label for="pole-select">Select Pole</label>
-                        <select id="pole-select" class="form-control">
-                            <option value="">Select a pole</option>
-                            <option value="P001">P001 - Awadhpuri Main Square</option>
-                            <option value="P002">P002 - Sector A</option>
-                            <option value="P003">P003 - Sector B</option>
-                            <option value="P004">P004 - Sector C</option>
-                            <option value="P005">P005 - Sector D</option>
-                            <option value="P006">P006 - Sector E</option>
-                            <option value="P007">P007 - Sector F</option>
-                            <option value="P008">P008 - Sector G</option>
-                            <option value="P009">P009 - Sector H</option>
-                            <option value="P010">P010 - Sector I</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="blackout-password">Security Password</label>
-                        <input type="password" id="blackout-password" placeholder="Enter security password">
-                    </div>
-                    <button class="btn btn-primary" id="trigger-blackout">Trigger Blackout</button>
+                    <button class="btn btn-danger" id="manual-blackout-btn">Manual Blackout Trigger</button>
                 </div>
             </div>
 
             <!-- Network Map Section -->
-            <div class="dashboard-section" id="network-map">
+             <div class="dashboard-section" id="network-map">
                 <h2>Network Map</h2>
                 <div class="map-container">
                     <div id="network-map-view"></div>
@@ -159,7 +138,22 @@
                 <div class="widget" style="margin-top: 20px;">
                     <h3><i class="fas fa-info-circle"></i> Map Controls</h3>
                     <p>Click on any line to change its status</p>
-                    <button class="btn btn-primary" id="simulate-fault">Simulate Random Fault</button>
+                    <button class="btn btn-primary randombtn" id="simulate-fault">Simulate Random Fault</button>
+                   
+                   <div class="div-manual">
+                     <a href="https://repair-ioo6.onrender.com" target="_blank">
+                        <button class="btn btn-primary">Repairing Status</button>
+                    </a>
+                   
+                    <a href="https://predection-bk97.onrender.com" target="_blank">
+                        <button class="btn btn-primary">Weather Predective</button>
+                    </a>
+                  
+                     <a href="https://weather-tyq6.onrender.com" target="_blank">
+                        <button class="btn btn-primary">OverAll Analysis</button>
+                    </a>
+                   </div>
+
                 </div>
             </div>
 
@@ -210,6 +204,11 @@
                             </select>
                         </div>
                     </div>
+                    <div class="form-group">
+                   <label for="dispatch-reason">Break Reason</label>
+                   <input type="text" id="dispatch-reason" placeholder="Enter reason for dispatch"
+                       class="form-control">
+               </div>
                     <button class="btn btn-primary" id="dispatch-van">Dispatch Van</button>
                 </div>
                 
@@ -217,6 +216,46 @@
                     <h3><i class="fas fa-clipboard-list"></i> Active Repairs</h3>
                     <div id="active-repairs-list">
                         <p>No active repairs at this time</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blackout Control Section -->
+            <div class="dashboard-section" id="blackout-control">
+                <h2>Blackout Control</h2>
+                <div class="widget">
+                    <h3><i class="fas fa-bolt"></i> Manual Blackout Control</h3>
+                    <div class="form-group">
+                        <label for="blackout-pole-select">Select Pole for Blackout</label>
+                        <select id="blackout-pole-select" class="form-control">
+                            <option value="">Select a pole</option>
+                            <option value="P001">P001 - Awadhpuri Main Square</option>
+                            <option value="P002">P002 - Sector A</option>
+                            <option value="P003">P003 - Sector B</option>
+                            <option value="P004">P004 - Sector C</option>
+                            <option value="P005">P005 - Sector D</option>
+                            <option value="P006">P006 - Sector E</option>
+                            <option value="P007">P007 - Sector F</option>
+                            <option value="P008">P008 - Sector G</option>
+                            <option value="P009">P009 - Sector H</option>
+                            <option value="P010">P010 - Sector I</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="blackout-reason">Blackout Reason</label>
+                        <input type="text" id="blackout-reason" placeholder="Enter reason for blackout" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="blackout-password">Security Password <span style="color: #ff8c42; font-size: medium; font-weight: 800;">admin123</span></label>
+                        <input type="password" id="blackout-password" placeholder="Enter security password" class="form-control">
+                    </div>
+                    <button class="btn btn-danger" id="trigger-blackout">Trigger Blackout</button>
+                </div>
+                
+                <div class="widget">
+                    <h3><i class="fas fa-history"></i> Recent Blackouts</h3>
+                    <div id="blackout-history">
+                        <p>No recent blackouts</p>
                     </div>
                 </div>
             </div>
@@ -341,9 +380,59 @@
         </div>
     </div>
 
+    <!-- Manual Blackout Modal -->
+    <div id="blackout-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-bolt"></i> Manual Blackout Control</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="break-reason">Break Reason</label>
+                    <input type="text" id="break-reason"
+                        placeholder="Enter reason for blackout (e.g., Pole broken, Transformer fault)"
+                        class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="break-pole-select">Select Broken Pole</label>
+                    <select id="break-pole-select" class="form-control">
+                        <option value="">Select a pole</option>
+                        <option value="P001">P001 - Awadhpuri Main Square</option>
+                        <option value="P002">P002 - Sector A</option>
+                        <option value="P003">P003 - Sector B</option>
+                        <option value="P004">P004 - Sector C</option>
+                        <option value="P005">P005 - Sector D</option>
+                        <option value="P006">P006 - Sector E</option>
+                        <option value="P007">P007 - Sector F</option>
+                        <option value="P008">P008 - Sector G</option>
+                        <option value="P009">P009 - Sector H</option>
+                        <option value="P010">P010 - Sector I</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="break-time">Time of Break</label>
+                    <input type="datetime-local" id="break-time" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="estimated-fix-time">Estimated Fix Time (minutes)</label>
+                    <input type="number" id="estimated-fix-time" class="form-control"
+                        placeholder="Enter estimated repair time" min="1" value="60">
+                </div>
+                <div class="form-group">
+                    <label for="break-password">Security Password  <span style="color: #ff8c42; font-size: medium; font-weight: 800;">admin123</span></label>
+                    <input type="password" id="break-password" placeholder="Enter security password"
+                        class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="confirm-blackout">Trigger Blackout</button>
+                <button class="btn btn-danger" id="cancel-blackout">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
     <script src="script.js"></script>
-    
 </body>
 </html>
