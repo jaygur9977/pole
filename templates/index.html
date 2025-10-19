@@ -1,0 +1,2152 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send WhatsApp Message</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+    }
+    input, button {
+      padding: 12px;
+      margin: 8px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #25D366;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1ebe5d;
+    }
+  </style>
+</head>
+<body>
+  <input type="text" id="msgInput" placeholder="Type your message here" />
+  <button id="sendBtn">Send WhatsApp Message</button>
+
+  <script>
+    const button = document.getElementById('sendBtn');
+    const input = document.getElementById('msgInput');
+
+    button.addEventListener('click', async () => {
+      const msg = input.value.trim();
+      if (!msg) {
+        alert("Please type a message first!");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Sending...";
+
+      try {
+        const response = await fetch('/send-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg })   // <-- send typed message
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+          alert("Message sent! SID: " + data.sid);
+        } else {
+          alert("Error: " + data.error);
+        }
+      } catch (err) {
+        alert("Request failed: " + err);
+      }
+
+      button.disabled = false;
+      button.textContent = "Send WhatsApp Message";
+    });
+  </script>
+</body>
+</html> -->
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awadhpuri Electricity Monitoring</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-red: #ff073a;
+            --neon-orange: #ff8c42;
+            --neon-green: #39ff14;
+            --dark-bg: #0a0e17;
+            --darker-bg: #050811;
+            --panel-bg: rgba(8, 15, 30, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--darker-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-form {
+            background: var(--panel-bg);
+            padding: 2rem;
+            border-radius: 10px;
+            width: 400px;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            border: 1px solid var(--neon-blue);
+        }
+
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a3b5a;
+            border-radius: 5px;
+            color: white;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--neon-blue);
+            color: var(--dark-bg);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .btn-danger {
+            background: var(--neon-red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 0 15px var(--neon-red);
+        }
+
+        .user-type-selector {
+            display: flex;
+            margin-bottom: 1.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .user-type {
+            flex: 1;
+            padding: 0.8rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .user-type.active {
+            background: var(--neon-blue);
+            color: var(--dark-bg);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: var(--panel-bg);
+            padding: 1.5rem;
+            border-right: 1px solid rgba(0, 243, 255, 0.2);
+            overflow-y: auto;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+            font-size: 1.8rem;
+        }
+
+        .nav-item {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-item:hover {
+            background: rgba(0, 243, 255, 0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(0, 243, 255, 0.2);
+            border-left: 3px solid var(--neon-blue);
+        }
+
+        .nav-item i {
+            margin-right: 0.8rem;
+            color: var(--neon-blue);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Map Container */
+        .map-container {
+            height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            position: relative;
+        }
+
+        #official-map,
+        #public-map,
+        #network-map-view {
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Notifications */
+        .notifications-panel {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 8, 58, 0.3);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .notifications-panel h3 {
+            color: var(--neon-red);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .notifications-panel h3 i {
+            margin-right: 0.5rem;
+        }
+
+        .notification {
+            padding: 1rem;
+            border-left: 3px solid var(--neon-red);
+            background: rgba(255, 8, 58, 0.1);
+            margin-bottom: 0.8rem;
+            border-radius: 0 5px 5px 0;
+            animation: slideIn 0.5s forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.repair {
+            border-left-color: var(--neon-orange);
+            background: rgba(255, 140, 66, 0.1);
+        }
+
+        .notification.resolved {
+            border-left-color: var(--neon-green);
+            background: rgba(57, 255, 20, 0.1);
+        }
+
+        /* Control Panel */
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .widget {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .widget h3 {
+            margin-bottom: 1rem;
+            color: var(--neon-blue);
+            display: flex;
+            align-items: center;
+        }
+
+        .widget h3 i {
+            margin-right: 0.5rem;
+        }
+
+        /* Repair Tracker */
+        .tracker-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin: 2rem 0;
+        }
+
+        .tracker-steps::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #2a3b5a;
+            z-index: 1;
+        }
+
+        .tracker-step {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-indicator {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #2a3b5a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem;
+        }
+
+        .step-indicator.active {
+            background: var(--neon-blue);
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        .step-indicator.completed {
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        /* Public Dashboard Specific */
+        .public-dashboard .sidebar {
+            display: none;
+        }
+
+        .public-dashboard .main-content {
+            width: 100%;
+        }
+
+        .energy-tip {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(57, 255, 20, 0.3);
+        }
+
+        .energy-tip h3 {
+            color: var(--neon-green);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Blackout Control */
+        .blackout-control {
+            background: rgba(255, 8, 58, 0.1);
+            border: 1px solid var(--neon-red);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .blackout-control h3 {
+            color: var(--neon-red);
+            margin-bottom: 1rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: var(--panel-bg);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 500px;
+            box-shadow: 0 0 25px rgba(255, 8, 58, 0.5);
+            border: 1px solid var(--neon-red);
+            animation: modalSlideIn 0.3s;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            color: var(--neon-red);
+            margin: 0;
+        }
+
+        .close-modal {
+            color: #aaa;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: white;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none;
+        }
+
+        /* Map Popup Styling */
+        .map-popup {
+            color: #333;
+        }
+
+        .map-popup h4 {
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        .map-popup .status {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+
+        .status.healthy {
+            background: rgba(57, 255, 20, 0.2);
+            color: var(--neon-green);
+        }
+
+        .status.fault {
+            background: rgba(255, 8, 58, 0.2);
+            color: var(--neon-red);
+        }
+
+        .status.repair {
+            background: rgba(255, 140, 66, 0.2);
+            color: var(--neon-orange);
+        }
+
+        /* Line Status Legend */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: var(--panel-bg);
+            padding: 1rem;
+            border-radius: 5px;
+            z-index: 1000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 5px;
+            margin-right: 0.5rem;
+        }
+
+        .legend-blue {
+            background: var(--neon-blue);
+            box-shadow: 0 0 5px var(--neon-blue);
+        }
+
+        .legend-red {
+            background: var(--neon-red);
+            box-shadow: 0 0 5px var(--neon-red);
+        }
+
+        .legend-orange {
+            background: var(--neon-orange);
+            box-shadow: 0 0 5px var(--neon-orange);
+        }
+
+        /* Electrician List */
+        .electrician-list {
+            list-style: none;
+        }
+
+        .electrician-list li {
+            padding: 0.8rem;
+            background: rgba(0, 0, 0, 0.2);
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .electrician-list .distance {
+            color: var(--neon-blue);
+            font-size: 0.9rem;
+        }
+
+        /* Van Animation */
+        .van-marker {
+            background-color: #ff8c42;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 10px #ff8c42;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* Repair Management */
+        .van-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .van-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--neon-orange);
+        }
+
+        .van-card h4 {
+            color: var(--neon-orange);
+            margin-bottom: 0.5rem;
+        }
+
+        .van-card .status {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+
+        .status.available {
+            background: rgba(57, 255, 20, 0.2);
+            color: var(--neon-green);
+        }
+
+        .status.dispatched {
+            background: rgba(255, 140, 66, 0.2);
+            color: var(--neon-orange);
+        }
+
+        /* Dashboard sections */
+        .dashboard-section {
+            display: none;
+        }
+
+        .dashboard-section.active {
+            display: block;
+        }
+
+        /* Form styling */
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        /* Animation for van movement */
+        @keyframes vanMove {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(var(--move-x), var(--move-y));
+            }
+        }
+
+        .moving-van {
+            animation: vanMove 3s linear forwards;
+        }
+
+        /* WhatsApp Notification Panel */
+        .whatsapp-panel {
+            background: var(--panel-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(37, 211, 102, 0.3);
+        }
+
+        .whatsapp-panel h3 {
+            color: #25D366;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .whatsapp-panel h3 i {
+            margin-right: 0.5rem;
+        }
+
+        .div-manual {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="login-form">
+            <h2>Awadhpuri Electricity Monitoring</h2>
+            <div class="user-type-selector">
+                <div class="user-type active" id="public-user">Public User</div>
+                <div class="user-type" id="official-user">Official</div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <button class="btn btn-primary" id="login-btn">Login</button>
+        </div>
+    </div>
+
+    <!-- Manual Blackout Modal -->
+    <div id="blackout-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-bolt"></i> Manual Blackout Control</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="break-reason">Break Reason</label>
+                    <input type="text" id="break-reason"
+                        placeholder="Enter reason for blackout (e.g., Pole broken, Transformer fault)"
+                        class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="break-pole-select">Select Broken Pole</label>
+                    <select id="break-pole-select" class="form-control">
+                        <option value="">Select a pole</option>
+                        <option value="P001">P001 - Awadhpuri Main Square</option>
+                        <option value="P002">P002 - Sector A</option>
+                        <option value="P003">P003 - Sector B</option>
+                        <option value="P004">P004 - Sector C</option>
+                        <option value="P005">P005 - Sector D</option>
+                        <option value="P006">P006 - Sector E</option>
+                        <option value="P007">P007 - Sector F</option>
+                        <option value="P008">P008 - Sector G</option>
+                        <option value="P009">P009 - Sector H</option>
+                        <option value="P010">P010 - Sector I</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="break-time">Time of Break</label>
+                    <input type="datetime-local" id="break-time" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="estimated-fix-time">Estimated Fix Time (minutes)</label>
+                    <input type="number" id="estimated-fix-time" class="form-control"
+                        placeholder="Enter estimated repair time" min="1" value="60">
+                </div>
+                <div class="form-group">
+                    <label for="break-password">Security Password <span
+                            style="color: #ff8c42; font-size: medium; font-weight: 800;">admin123</span></label>
+                    <input type="password" id="break-password" placeholder="Enter security password"
+                        class="form-control">
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="confirm-blackout">Trigger Blackout</button>
+                <button class="btn btn-danger" id="cancel-blackout">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Officials Dashboard -->
+    <div class="container officials-dashboard hidden">
+        <div class="sidebar">
+            <div class="logo">
+                <h1>GridGuardian</h1>
+                <p>Officials Dashboard</p>
+            </div>
+            <div class="nav-item active" data-section="overview">
+                <i class="fas fa-chart-line"></i> Overview
+            </div>
+            <div class="nav-item" data-section="network-map">
+                <i class="fas fa-map-marked-alt"></i> Network Map
+            </div>
+            <div class="nav-item" data-section="repair-management">
+                <i class="fas fa-tools"></i> Repair Management
+            </div>
+            <div class="nav-item" data-section="analytics">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </div>
+            <div class="nav-item" data-section="blackout-control">
+                <i class="fas fa-bolt"></i> Blackout Control
+            </div>
+            <div class="nav-item" data-section="electricians">
+                <i class="fas fa-user-cog"></i> Electricians
+            </div>
+            <div class="nav-item" data-section="whatsapp-control">
+                <i class="fab fa-whatsapp"></i> WhatsApp Alerts
+            </div>
+            <div class="nav-item" data-section="settings">
+                <i class="fas fa-cog"></i> Settings
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h2>Grid Overview - Awadhpuri, Bhopal</h2>
+                <div class="user-info">
+                    <span>Welcome, Official User</span>
+                    <button class="btn btn-danger" id="logout-btn" style="margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+
+            <!-- Overview Section -->
+            <div class="dashboard-section active" id="overview">
+                <div class="map-container">
+                    <div id="official-map"></div>
+                    <div class="legend">
+                        <h4>Line Status</h4>
+                        <div class="legend-item">
+                            <div class="legend-color legend-blue"></div>
+                            <span>Healthy</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-red"></div>
+                            <span>Fault</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-orange"></div>
+                            <span>Repair Ongoing</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notifications-panel">
+                    <h3><i class="fas fa-bell"></i> Recent Fault Notifications</h3>
+                    <div id="notifications-container">
+                        <div class="notification">
+                            <strong>System initialized</strong>
+                            <p>All poles and lines are operational</p>
+                            <p>Time: <span id="current-time"></span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <div class="widget">
+                        <h3><i class="fas fa-tasks"></i> Repair Assignment</h3>
+                        <p>Assign technicians to fault locations</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;" id="view-repair-map">View Repair
+                            Map</button>
+                    </div>
+                    <div class="widget">
+                        <h3><i class="fas fa-robot"></i> AI Recommendations</h3>
+                        <ul>
+                            <li>Feeder 2 risk of overload in next 5 days</li>
+                            <li>Pole #2 transformer heating detected</li>
+                            <li>Schedule maintenance for Line L001</li>
+                        </ul>
+                    </div>
+                    <div class="widget">
+                        <h3><i class="fas fa-truck"></i> Repair Van Tracking</h3>
+                        <div id="van-tracking-info">
+                            <p>Van 01: Available at Main Station</p>
+                            <p>Van 02: Available at Sector B</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="blackout-control">
+                    <h3><i class="fas fa-bolt"></i> Blackout Control</h3>
+                    <p>Manually trigger blackout for specific poles</p>
+                    <button class="btn btn-danger" id="manual-blackout-btn">Manual Blackout Trigger</button>
+                </div>
+            </div>
+
+            <!-- Network Map Section -->
+            <div class="dashboard-section" id="network-map">
+                <h2>Network Map</h2>
+                <div class="map-container">
+                    <div id="network-map-view"></div>
+                </div>
+                <div class="widget" style="margin-top: 20px;">
+                    <h3><i class="fas fa-info-circle"></i> Map Controls</h3>
+                    <p>Click on any line to change its status</p>
+                    <button class="btn btn-primary" id="simulate-fault">Simulate Random Fault</button>
+                    <div class="div-manual">
+                        <a href="https://repair-ioo6.onrender.com" target="_blank">
+                            <button class="btn btn-primary">Repairing Status</button>
+                        </a>
+
+                        <a href="https://predection-bk97.onrender.com" target="_blank">
+                            <button class="btn btn-primary">Weather Predective</button>
+                        </a>
+
+                        <a href="https://weather-tyq6.onrender.com" target="_blank">
+                            <button class="btn btn-primary">OverAll Analysis</button>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Repair Management Section -->
+            <div class="dashboard-section" id="repair-management">
+                <h2>Repair Management</h2>
+
+                <div class="van-list">
+                    <div class="van-card">
+                        <h4>Van 01 - Repair Team Alpha</h4>
+                        <p><strong>Driver:</strong> Rajesh Kumar</p>
+                        <p><strong>Status:</strong> <span class="status available">Available</span></p>
+                        <p><strong>Current Location:</strong> Main Station</p>
+                    </div>
+                    <div class="van-card">
+                        <h4>Van 02 - Repair Team Beta</h4>
+                        <p><strong>Driver:</strong> Mohan Singh</p>
+                        <p><strong>Status:</strong> <span class="status available">Available</span></p>
+                        <p><strong>Current Location:</strong> Sector B Depot</p>
+                    </div>
+                </div>
+
+                <div class="widget">
+                    <h3><i class="fas fa-wrench"></i> Dispatch Repair Van</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="van-select">Select Van</label>
+                            <select id="van-select" class="form-control">
+                                <option value="">Select a van</option>
+                                <option value="van01">Van 01 - Repair Team Alpha</option>
+                                <option value="van02">Van 02 - Repair Team Beta</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="faulty-pole">Faulty Pole ID</label>
+                            <select id="faulty-pole" class="form-control">
+                                <option value="">Select a pole</option>
+                                <option value="P001">P001 - Awadhpuri Main Square</option>
+                                <option value="P002">P002 - Sector A</option>
+                                <option value="P003">P003 - Sector B</option>
+                                <option value="P004">P004 - Sector C</option>
+                                <option value="P005">P005 - Sector D</option>
+                                <option value="P006">P006 - Sector E</option>
+                                <option value="P007">P007 - Sector F</option>
+                                <option value="P008">P008 - Sector G</option>
+                                <option value="P009">P009 - Sector H</option>
+                                <option value="P010">P010 - Sector I</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="dispatch-reason">Break Reason</label>
+                        <input type="text" id="dispatch-reason" placeholder="Enter reason for dispatch"
+                            class="form-control">
+                    </div>
+                    <button class="btn btn-primary" id="dispatch-van">Dispatch Van</button>
+                </div>
+
+                <div class="widget">
+                    <h3><i class="fas fa-clipboard-list"></i> Active Repairs</h3>
+                    <div id="active-repairs-list">
+                        <p>No active repairs at this time</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WhatsApp Alerts Section -->
+            <div class="dashboard-section" id="whatsapp-control">
+                <h2><i class="fab fa-whatsapp"></i> WhatsApp Alert Management</h2>
+
+                <div class="whatsapp-panel">
+                    <h3><i class="fas fa-comment-alt"></i> Send Custom Alert</h3>
+                    <div class="form-group">
+                        <label for="custom-message">Custom Message</label>
+                        <textarea id="custom-message" class="form-control" rows="3"
+                            placeholder="Enter your custom alert message"></textarea>
+                    </div>
+                    <button class="btn btn-primary" id="send-custom-alert">Send WhatsApp Alert</button>
+                </div>
+
+                <div class="widget">
+                    <h3><i class="fas fa-history"></i> Notification History</h3>
+                    <div id="notification-history">
+                        <p>Loading notification history...</p>
+                    </div>
+                </div>
+
+                <div class="widget">
+                    <h3><i class="fas fa-bell"></i> Alert Settings</h3>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="fault-alerts" checked> Send alerts for faults
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="repair-alerts" checked> Send alerts for repair updates
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="resolution-alerts" checked> Send alerts for resolutions
+                        </label>
+                    </div>
+                    <button class="btn btn-primary" id="save-alert-settings">Save Settings</button>
+                </div>
+            </div>
+
+            <!-- Other sections would be implemented similarly -->
+            <div class="dashboard-section" id="analytics">
+                <h2>Analytics</h2>
+                <div class="widget">
+                    <h3><i class="fas fa-chart-line"></i> Power Consumption Trends</h3>
+                    <p>Analytics data will be displayed here</p>
+                </div>
+            </div>
+
+            <div class="dashboard-section" id="electricians">
+                <h2>Electrician Management</h2>
+                <div class="widget">
+                    <h3><i class="fas fa-users"></i> Available Electricians</h3>
+                    <ul class="electrician-list">
+                        <li>Rajesh Kumar <span class="distance">0.8km away</span></li>
+                        <li>Mohan Singh <span class="distance">1.2km away</span></li>
+                        <li>Ankit Patel <span class="distance">1.5km away</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="dashboard-section" id="settings">
+                <h2>Settings</h2>
+                <div class="widget">
+                    <h3><i class="fas fa-cog"></i> System Settings</h3>
+                    <p>System configuration options will be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Public Dashboard -->
+    <div class="container public-dashboard hidden">
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h2>Awadhpuri Power Network Status</h2>
+                <div class="user-info">
+                    <span>Welcome, Resident</span>
+                    <button class="btn btn-danger" id="public-logout-btn" style="margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+
+            <div class="map-container">
+                <div id="public-map"></div>
+                <div class="legend">
+                    <h4>Line Status</h4>
+                    <div class="legend-item">
+                        <div class="legend-color legend-blue"></div>
+                        <span>Healthy</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-red"></div>
+                        <span>Fault</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-orange"></div>
+                        <span>Repair Ongoing</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="energy-tip">
+                <h3><i class="fas fa-lightbulb"></i> Energy Saving Tip</h3>
+                <p>Turn off unnecessary lights during peak hours (6 PM - 10 PM) to help reduce grid load and earn Green
+                    Credits!</p>
+            </div>
+
+            <div class="notifications-panel">
+                <h3><i class="fas fa-bell"></i> Area Notifications</h3>
+                <div id="public-notifications-container">
+                    <div class="notification">
+                        <strong>System initialized</strong>
+                        <p>All power lines are operational in your area</p>
+                        <p>Time: <span id="public-current-time"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="widget">
+                <h3><i class="fas fa-wrench"></i> Repair Tracker</h3>
+                <div class="tracker-steps">
+                    <div class="tracker-step">
+                        <div class="step-indicator">1</div>
+                        <div>Fault Reported</div>
+                    </div>
+                    <div class="tracker-step">
+                        <div class="step-indicator">2</div>
+                        <div>Van Dispatched</div>
+                    </div>
+                    <div class="tracker-step">
+                        <div class="step-indicator">3</div>
+                        <div>Repair Started</div>
+                    </div>
+                    <div class="tracker-step">
+                        <div class="step-indicator">4</div>
+                        <div>Supply Restored</div>
+                    </div>
+                </div>
+                <p><strong>Current Status:</strong> No ongoing repairs in your area</p>
+                <p><strong>ETA:</strong> -</p>
+            </div>
+
+            <div class="control-panel">
+                <div class="widget">
+                    <h3><i class="fas fa-user-cog"></i> Local Electricians</h3>
+                    <ul class="electrician-list">
+                        <li>Rajesh Kumar <span class="distance">0.8km away</span></li>
+                        <li>Mohan Singh <span class="distance">1.2km away</span></li>
+                        <li>Ankit Patel <span class="distance">1.5km away</span></li>
+                    </ul>
+                    <button class="btn btn-primary" style="margin-top: 1rem;">Register as Electrician</button>
+                </div>
+                <div class="widget">
+                    <h3><i class="fas fa-exclamation-circle"></i> Report an Issue</h3>
+                    <p>Notice a problem in your area? Report it quickly</p>
+                    <button class="btn btn-primary" style="margin-top: 1rem;">Report Fault</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+
+    <script>
+        // Application state
+        const AppState = {
+            poles: [],
+            lines: [],
+            vans: [],
+            notifications: [],
+            currentUser: null,
+            officialMap: null,
+            publicMap: null,
+            networkMap: null,
+            officialLayerGroup: null,
+            publicLayerGroup: null,
+            networkLayerGroup: null,
+            vanMarkers: {},
+            statePollingInterval: null
+        };
+
+        // Initialize page after DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Setup login functionality
+            setupLogin();
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Update current time
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+
+            // Load initial state from backend
+            loadInitialState();
+        });
+
+        // Load initial state from backend
+        async function loadInitialState() {
+            try {
+                const response = await fetch('/api/state');
+                const data = await response.json();
+
+                AppState.poles = data.poles || [];
+                AppState.lines = data.lines || [];
+                AppState.vans = data.vans || [];
+
+                // Update active repairs list
+                updateActiveRepairsList();
+
+                console.log('Initial state loaded:', AppState);
+            } catch (error) {
+                console.error('Error loading initial state:', error);
+            }
+        }
+
+        // Update current time display
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            document.getElementById('current-time').textContent = timeStr;
+            document.getElementById('public-current-time').textContent = timeStr;
+        }
+
+        // Twilio notification function
+        async function sendWhatsAppNotification(message) {
+            try {
+                const response = await fetch('/send-whatsapp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        timestamp: new Date().toLocaleString()
+                    })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    console.log('WhatsApp notification sent successfully:', result.sid);
+                    return true;
+                } else {
+                    console.error('Failed to send WhatsApp notification:', result.error);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error sending WhatsApp notification:', error);
+                return false;
+            }
+        }
+
+        // Initialize maps for both dashboards
+        function initMaps() {
+            // Official Map
+            AppState.officialMap = L.map('official-map').setView([23.261, 77.416], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(AppState.officialMap);
+
+            // Public Map
+            AppState.publicMap = L.map('public-map').setView([23.261, 77.416], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(AppState.publicMap);
+
+            // Network Map (for officials)
+            AppState.networkMap = L.map('network-map-view').setView([23.261, 77.416], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(AppState.networkMap);
+
+            // Create layer groups for dynamic updates
+            AppState.officialLayerGroup = L.layerGroup().addTo(AppState.officialMap);
+            AppState.publicLayerGroup = L.layerGroup().addTo(AppState.publicMap);
+            AppState.networkLayerGroup = L.layerGroup().addTo(AppState.networkMap);
+
+            // Draw poles and lines on all maps
+            updateMaps();
+
+            // Add van markers
+            addVanMarkers();
+
+            // Setup click events for network map
+            setupMapInteractions();
+
+            // Start polling for state updates (every 3 seconds)
+            if (AppState.statePollingInterval) {
+                clearInterval(AppState.statePollingInterval);
+            }
+            AppState.statePollingInterval = setInterval(loadInitialState, 3000);
+        }
+
+        // Add van markers to the map
+        function addVanMarkers() {
+            // Clear existing van markers
+            Object.values(AppState.vanMarkers).forEach(marker => {
+                if (AppState.officialLayerGroup && AppState.officialLayerGroup.hasLayer(marker)) {
+                    AppState.officialLayerGroup.removeLayer(marker);
+                }
+            });
+            AppState.vanMarkers = {};
+
+            AppState.vans.forEach(van => {
+                const pole = AppState.poles.find(p => p.id === van.currentPole);
+                if (pole) {
+                    const vanIcon = L.divIcon({
+                        html: `<div class="van-marker">${van.id.replace('van', 'V')}</div>`,
+                        className: 'van-icon',
+                        iconSize: [24, 24]
+                    });
+
+                    // Add van marker to official map
+                    const vanMarker = L.marker([pole.lat, pole.lng], { icon: vanIcon }).addTo(AppState.officialLayerGroup);
+                    vanMarker.bindPopup(`
+                        <div class="map-popup">
+                            <h4>${van.name}</h4>
+                            <p><strong>Driver:</strong> ${van.driver}</p>
+                            <p><strong>Status:</strong> ${van.status}</p>
+                            <p><strong>Current Location:</strong> ${pole.id} (${pole.area})</p>
+                        </div>
+                    `);
+
+                    // Store reference to van marker
+                    AppState.vanMarkers[van.id] = vanMarker;
+                }
+            });
+        }
+
+        // Setup map interactions
+        function setupMapInteractions() {
+            AppState.networkMap.on('click', function (e) {
+                // Find if a line was clicked
+                const line = findLineNearPoint(e.latlng, AppState.networkMap);
+                if (line) {
+                    // Create a simple context menu at click position
+                    const menu = document.createElement('div');
+                    menu.style.position = 'absolute';
+                    menu.style.left = e.containerPoint.x + 'px';
+                    menu.style.top = e.containerPoint.y + 'px';
+                    menu.style.background = 'var(--panel-bg)';
+                    menu.style.border = '1px solid var(--neon-blue)';
+                    menu.style.borderRadius = '5px';
+                    menu.style.padding = '0.5rem';
+                    menu.style.zIndex = '1000';
+
+                    menu.innerHTML = `
+                        <button data-action="mark-fault" style="display: block; width: 100%; text-align: left; padding: 0.5rem; background: none; border: none; color: white; cursor: pointer;">Mark as Fault</button>
+                        <button data-action="start-repair" style="display: block; width: 100%; text-align: left; padding: 0.5rem; background: none; border: none; color: white; cursor: pointer;">Start Repair</button>
+                        <button data-action="mark-resolved" style="display: block; width: 100%; text-align: left; padding: 0.5rem; background: none; border: none; color: white; cursor: pointer;">Mark as Resolved</button>
+                    `;
+
+                    document.body.appendChild(menu);
+
+                    // Add event listeners to context menu buttons
+                    menu.querySelector('[data-action="mark-fault"]').addEventListener('click', function () {
+                        changeLineStatus(line, 'fault');
+                        document.body.removeChild(menu);
+                    });
+
+                    menu.querySelector('[data-action="start-repair"]').addEventListener('click', function () {
+                        changeLineStatus(line, 'repair');
+                        document.body.removeChild(menu);
+                    });
+
+                    menu.querySelector('[data-action="mark-resolved"]').addEventListener('click', function () {
+                        changeLineStatus(line, 'healthy');
+                        document.body.removeChild(menu);
+                    });
+
+                    // Remove menu when clicking elsewhere
+                    const clickHandler = function (evt) {
+                        if (!menu.contains(evt.target)) {
+                            document.body.removeChild(menu);
+                            document.removeEventListener('click', clickHandler);
+                        }
+                    };
+
+                    setTimeout(() => {
+                        document.addEventListener('click', clickHandler);
+                    }, 100);
+                }
+            });
+        }
+
+        // Find line near a point
+        function findLineNearPoint(latlng, map) {
+            const point = map.latLngToContainerPoint(latlng);
+            let closestLine = null;
+            let minDistance = Infinity;
+
+            AppState.lines.forEach(line => {
+                const fromPole = AppState.poles.find(p => p.id === line.from);
+                const toPole = AppState.poles.find(p => p.id === line.to);
+
+                if (fromPole && toPole) {
+                    const fromPoint = map.latLngToContainerPoint([fromPole.lat, fromPole.lng]);
+                    const toPoint = map.latLngToContainerPoint([toPole.lat, toPole.lng]);
+
+                    // Calculate distance from point to line
+                    const distance = pointToLineDistance(
+                        point.x, point.y,
+                        fromPoint.x, fromPoint.y,
+                        toPoint.x, toPoint.y
+                    );
+
+                    if (distance < minDistance && distance < 20) { // 20px tolerance
+                        minDistance = distance;
+                        closestLine = line;
+                    }
+                }
+            });
+
+            return closestLine;
+        }
+
+        // Calculate distance from point to line segment
+        function pointToLineDistance(px, py, x1, y1, x2, y2) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const len_sq = C * C + D * D;
+            let param = -1;
+
+            if (len_sq !== 0) {
+                param = dot / len_sq;
+            }
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // Draw poles and connecting lines on the map
+        function updateMaps() {
+            // Clear existing layers
+            if (AppState.officialLayerGroup) AppState.officialLayerGroup.clearLayers();
+            if (AppState.publicLayerGroup) AppState.publicLayerGroup.clearLayers();
+            if (AppState.networkLayerGroup) AppState.networkLayerGroup.clearLayers();
+
+            // Update pole status based on connected lines
+            updatePoleStatuses();
+
+            // Draw lines between poles
+            AppState.lines.forEach(line => {
+                const fromPole = AppState.poles.find(p => p.id === line.from);
+                const toPole = AppState.poles.find(p => p.id === line.to);
+
+                if (fromPole && toPole) {
+                    const linePoints = [[fromPole.lat, fromPole.lng], [toPole.lat, toPole.lng]];
+                    const lineColor = getLineColor(line.status);
+
+                    // Draw line on official map
+                    const officialLine = L.polyline(linePoints, {
+                        color: lineColor,
+                        weight: 4,
+                        opacity: 0.7
+                    }).addTo(AppState.officialLayerGroup);
+
+                    // Draw line on public map
+                    const publicLine = L.polyline(linePoints, {
+                        color: lineColor,
+                        weight: 4,
+                        opacity: 0.7
+                    }).addTo(AppState.publicLayerGroup);
+
+                    // Draw line on network map with interactive features
+                    const networkLine = L.polyline(linePoints, {
+                        color: lineColor,
+                        weight: 6,
+                        opacity: 0.8
+                    }).addTo(AppState.networkLayerGroup);
+
+                    // Add hover effects to network map lines
+                    networkLine.on('mouseover', function () {
+                        this.setStyle({ weight: 8 });
+                    });
+
+                    networkLine.on('mouseout', function () {
+                        this.setStyle({ weight: 6 });
+                    });
+
+                    // Add click event to network map lines for status info
+                    networkLine.on('click', function (e) {
+                        const popupContent = `
+                            <div class="map-popup">
+                                <h4>${line.id}</h4>
+                                <p><strong>From:</strong> ${fromPole.id} (${fromPole.area})</p>
+                                <p><strong>To:</strong> ${toPole.id} (${toPole.area})</p>
+                                <p><strong>Status:</strong> <span class="status ${line.status}">${line.status.toUpperCase()}</span></p>
+                                <p><strong>Length:</strong> ${calculateDistance(fromPole.lat, fromPole.lng, toPole.lat, toPole.lng).toFixed(2)} km</p>
+                            </div>
+                        `;
+                        networkLine.bindPopup(popupContent).openPopup();
+                    });
+
+                    // Add blinking animation for fault lines
+                    if (line.status === 'fault') {
+                        let isRed = true;
+                        setInterval(() => {
+                            officialLine.setStyle({
+                                color: isRed ? 'rgba(255, 7, 58, 0.3)' : '#ff073a'
+                            });
+                            publicLine.setStyle({
+                                color: isRed ? 'rgba(255, 7, 58, 0.3)' : '#ff073a'
+                            });
+                            networkLine.setStyle({
+                                color: isRed ? 'rgba(255, 7, 58, 0.3)' : '#ff073a'
+                            });
+                            isRed = !isRed;
+                        }, 1000);
+                    }
+
+                    // Add glow animation for healthy lines
+                    if (line.status === 'healthy') {
+                        let isBright = true;
+                        setInterval(() => {
+                            officialLine.setStyle({
+                                opacity: isBright ? 0.7 : 1
+                            });
+                            publicLine.setStyle({
+                                opacity: isBright ? 0.7 : 1
+                            });
+                            networkLine.setStyle({
+                                opacity: isBright ? 0.7 : 1
+                            });
+                            isBright = !isBright;
+                        }, 1500);
+                    }
+                }
+            });
+
+            // Add poles as markers
+            AppState.poles.forEach(pole => {
+                const markerIcon = L.divIcon({
+                    html: `<div style="background-color: ${getStatusColor(pole.status)}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px ${getStatusColor(pole.status)};"></div>`,
+                    className: 'pole-marker',
+                    iconSize: [20, 20]
+                });
+
+                // Add marker to official map
+                const officialMarker = L.marker([pole.lat, pole.lng], { icon: markerIcon }).addTo(AppState.officialLayerGroup);
+                officialMarker.bindPopup(`
+                    <div class="map-popup">
+                        <h4>${pole.id}</h4>
+                        <p><strong>Area:</strong> ${pole.area}</p>
+                        <p><strong>Location:</strong> ${pole.lat.toFixed(4)}, ${pole.lng.toFixed(4)}</p>
+                        <span class="status ${pole.status}">${pole.status.toUpperCase()}</span>
+                    </div>
+                `);
+
+                // Add marker to public map
+                const publicMarker = L.marker([pole.lat, pole.lng], { icon: markerIcon }).addTo(AppState.publicLayerGroup);
+                publicMarker.bindPopup(`
+                    <div class="map-popup">
+                        <h4>${pole.id}</h4>
+                        <p><strong>Area:</strong> ${pole.area}</p>
+                        <p><strong>Status:</strong> ${pole.status.toUpperCase()}</p>
+                    </div>
+                `);
+
+                // Add marker to network map
+                const networkMarker = L.marker([pole.lat, pole.lng], { icon: markerIcon }).addTo(AppState.networkLayerGroup);
+                networkMarker.bindPopup(`
+                    <div class="map-popup">
+                        <h4>${pole.id}</h4>
+                        <p><strong>Area:</strong> ${pole.area}</p>
+                        <p><strong>Location:</strong> ${pole.lat.toFixed(4)}, ${pole.lng.toFixed(4)}</p>
+                        <span class="status ${pole.status}">${pole.status.toUpperCase()}</span>
+                    </div>
+                `);
+            });
+
+            // Re-add van markers
+            addVanMarkers();
+        }
+
+        // Update pole status based on connected lines
+        function updatePoleStatuses() {
+            AppState.poles.forEach(pole => {
+                // Find all lines connected to this pole
+                const connectedLines = AppState.lines.filter(line =>
+                    line.from === pole.id || line.to === pole.id
+                );
+
+                // If any connected line has fault, pole has fault
+                if (connectedLines.some(line => line.status === 'fault')) {
+                    pole.status = 'fault';
+                }
+                // If any connected line is under repair, pole is under repair
+                else if (connectedLines.some(line => line.status === 'repair')) {
+                    pole.status = 'repair';
+                }
+                // Otherwise, pole is healthy
+                else {
+                    pole.status = 'healthy';
+                }
+            });
+        }
+
+        // Calculate distance between two points
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLng = deg2rad(lng2 - lng1);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
+
+        // Determine line color based on status
+        function getLineColor(status) {
+            if (status === 'fault') return '#ff073a'; // Red for fault
+            if (status === 'repair') return '#ff8c42'; // Orange for repair
+            return '#00f3ff'; // Blue for healthy
+        }
+
+        // Determine marker color based on status
+        function getStatusColor(status) {
+            if (status === 'fault') return '#ff073a'; // Red for fault
+            if (status === 'repair') return '#ff8c42'; // Orange for repair
+            return '#39ff14'; // Green for healthy
+        }
+
+        // Setup login functionality
+        function setupLogin() {
+            const loginBtn = document.getElementById('login-btn');
+            const userTypes = document.querySelectorAll('.user-type');
+            const loginScreen = document.getElementById('login-screen');
+            const officialDashboard = document.querySelector('.officials-dashboard');
+            const publicDashboard = document.querySelector('.public-dashboard');
+
+            // User type selection
+            userTypes.forEach(type => {
+                type.addEventListener('click', () => {
+                    userTypes.forEach(t => t.classList.remove('active'));
+                    type.classList.add('active');
+                });
+            });
+
+            // Login button click
+            loginBtn.addEventListener('click', () => {
+                const isOfficial = document.getElementById('official-user').classList.contains('active');
+
+                // Hide login screen
+                loginScreen.style.display = 'none';
+
+                // Show appropriate dashboard
+                if (isOfficial) {
+                    officialDashboard.classList.remove('hidden');
+                    AppState.currentUser = { type: 'official' };
+                } else {
+                    publicDashboard.classList.remove('hidden');
+                    AppState.currentUser = { type: 'public' };
+                }
+
+                // Initialize maps after login
+                initMaps();
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Logout buttons
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            document.getElementById('public-logout-btn').addEventListener('click', logout);
+
+            // Manual blackout button
+            document.getElementById('manual-blackout-btn').addEventListener('click', showBlackoutModal);
+
+            // Modal close buttons
+            document.getElementById('cancel-blackout').addEventListener('click', hideBlackoutModal);
+            document.querySelector('.close-modal').addEventListener('click', hideBlackoutModal);
+
+            // Confirm blackout button
+            document.getElementById('confirm-blackout').addEventListener('click', triggerBlackout);
+
+            // View repair map
+            document.getElementById('view-repair-map').addEventListener('click', viewRepairMap);
+
+            // Simulate fault button
+            document.getElementById('simulate-fault').addEventListener('click', simulateRandomFault);
+
+            // Dispatch van button
+            document.getElementById('dispatch-van').addEventListener('click', dispatchVan);
+
+            // WhatsApp notification button
+            document.getElementById('send-custom-alert').addEventListener('click', sendCustomAlert);
+
+            // Load notification history when WhatsApp section is opened
+            document.querySelector('[data-section="whatsapp-control"]').addEventListener('click', loadNotificationHistory);
+
+            // Navigation items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function () {
+                    const section = this.getAttribute('data-section');
+                    switchDashboardSection(section);
+
+                    // Update active nav item
+                    document.querySelectorAll('.nav-item').forEach(nav => {
+                        nav.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+        }
+
+        // Switch between dashboard sections
+        function switchDashboardSection(sectionId) {
+            document.querySelectorAll('.dashboard-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+
+            // Invalidate map size when switching to a map section
+            if (sectionId === 'network-map' && AppState.networkMap) {
+                setTimeout(() => {
+                    AppState.networkMap.invalidateSize();
+                }, 100);
+            }
+        }
+
+        // Logout function
+        function logout() {
+            document.querySelector('.officials-dashboard').classList.add('hidden');
+            document.querySelector('.public-dashboard').classList.add('hidden');
+            document.getElementById('login-screen').style.display = 'flex';
+            AppState.currentUser = null;
+
+            // Clear polling interval
+            if (AppState.statePollingInterval) {
+                clearInterval(AppState.statePollingInterval);
+                AppState.statePollingInterval = null;
+            }
+        }
+
+        // Show blackout modal
+        function showBlackoutModal() {
+            const modal = document.getElementById('blackout-modal');
+            modal.style.display = 'block';
+
+            // Set current time as default
+            const now = new Date();
+            const timeString = now.toISOString().slice(0, 16);
+            document.getElementById('break-time').value = timeString;
+        }
+
+        // Hide blackout modal
+        function hideBlackoutModal() {
+            const modal = document.getElementById('blackout-modal');
+            modal.style.display = 'none';
+        }
+
+        // Trigger blackout function
+        async function triggerBlackout() {
+            const password = document.getElementById('break-password').value;
+            const poleId = document.getElementById('break-pole-select').value;
+            const breakReason = document.getElementById('break-reason').value;
+            const estimatedRepairTime = document.getElementById('estimated-fix-time').value;
+
+            if (!poleId) {
+                alert('Please select a pole!');
+                return;
+            }
+
+            if (!breakReason) {
+                alert('Please enter a break reason!');
+                return;
+            }
+
+            if (password === 'admin123') {
+                try {
+                    const response = await fetch('/api/trigger-blackout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            pole_id: poleId,
+                            password: password,
+                            estimated_repair_time: parseInt(estimatedRepairTime),
+                            break_reason: breakReason
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        // Reload state from backend
+                        await loadInitialState();
+                        updateMaps();
+
+                        // Add notification
+                        const pole = AppState.poles.find(p => p.id === poleId);
+                        addNotification(`Manual blackout triggered at ${pole.id}, ${pole.area} (${breakReason})`, 'fault', 'official');
+                        addNotification(`Power outage in your area. Repair team will be dispatched shortly.`, 'fault', 'public');
+
+                        // Update repair tracker
+                        updateRepairTracker('fault-reported');
+
+                        // Hide modal
+                        hideBlackoutModal();
+
+                        // Clear form
+                        document.getElementById('break-reason').value = '';
+                        document.getElementById('break-password').value = '';
+                    } else {
+                        alert('Error: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('Error triggering blackout: ' + error.message);
+                }
+            } else {
+                alert('Incorrect security password!');
+            }
+        }
+
+        // Change line status
+        async function changeLineStatus(line, status) {
+            try {
+                const response = await fetch('/api/update-line-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        line_id: line.id,
+                        status: status
+                    })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Reload state from backend
+                    await loadInitialState();
+                    updateMaps();
+
+                    // Add notification based on status change
+                    if (status === 'fault') {
+                        addNotification(`Fault detected on line ${line.id}`, 'fault', 'official');
+                        addNotification(`Power interruption detected in your area. Repair team notified.`, 'fault', 'public');
+                        updateRepairTracker('fault-reported');
+                    } else if (status === 'repair') {
+                        addNotification(`Repair started on line ${line.id}`, 'repair', 'official');
+                        addNotification(`Repair in progress in your area. ETA: 45 minutes`, 'repair', 'public');
+                        updateRepairTracker('repair-started');
+                    } else if (status === 'healthy') {
+                        addNotification(`Repair completed on line ${line.id}. Supply restored.`, 'resolved', 'official');
+                        addNotification(`Power restored in your area. Thank you for your patience.`, 'resolved', 'public');
+                        updateRepairTracker('resolved');
+                    }
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error updating line status: ' + error.message);
+            }
+        }
+
+        // Dispatch van to repair
+        async function dispatchVan() {
+            const vanId = document.getElementById('van-select').value;
+            const poleId = document.getElementById('faulty-pole').value;
+            const breakReason = document.getElementById('dispatch-reason').value || 'Fault repair';
+
+            if (!vanId || !poleId) {
+                alert('Please select both a van and a faulty pole!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/dispatch-van', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        van_id: vanId,
+                        pole_id: poleId,
+                        break_reason: breakReason
+                    })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Reload state from backend
+                    await loadInitialState();
+                    updateMaps();
+
+                    const van = AppState.vans.find(v => v.id === vanId);
+                    const pole = AppState.poles.find(p => p.id === poleId);
+
+                    // Update UI
+                    updateVanStatus();
+
+                    // Add notification
+                    addNotification(`${van.name} dispatched to ${poleId} (${pole.area}) for ${breakReason}`, 'repair', 'official');
+                    addNotification(`Repair van dispatched to your area. ETA: 15 minutes`, 'repair', 'public');
+
+                    // Update repair tracker
+                    updateRepairTracker('van-dispatched');
+
+                    // Clear form
+                    document.getElementById('dispatch-reason').value = '';
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error dispatching van: ' + error.message);
+            }
+        }
+
+        // Update van status display
+        function updateVanStatus() {
+            const vanTrackingInfo = document.getElementById('van-tracking-info');
+            if (vanTrackingInfo) {
+                vanTrackingInfo.innerHTML = '';
+                AppState.vans.forEach(van => {
+                    const pole = AppState.poles.find(p => p.id === van.currentPole);
+                    const statusText = van.status === 'available' ? 'Available' : 'Dispatched';
+                    const p = document.createElement('p');
+                    p.textContent = `${van.name}: ${statusText} at ${pole ? pole.id : 'Unknown location'}`;
+                    vanTrackingInfo.appendChild(p);
+                });
+            }
+
+            // Update repair management section
+            const vanCards = document.querySelectorAll('.van-card');
+            vanCards.forEach(card => {
+                const vanName = card.querySelector('h4').textContent;
+                const vanId = vanName.includes('Alpha') ? 'van01' : 'van02';
+                const van = AppState.vans.find(v => v.id === vanId);
+                const statusEl = card.querySelector('.status');
+
+                if (van) {
+                    statusEl.textContent = van.status === 'available' ? 'Available' : 'Dispatched';
+                    statusEl.className = `status ${van.status === 'available' ? 'available' : 'dispatched'}`;
+
+                    const locationEl = card.querySelector('p:last-child');
+                    const pole = AppState.poles.find(p => p.id === van.currentPole);
+                    locationEl.textContent = `Current Location: ${pole ? pole.id + ' (' + pole.area + ')' : 'Unknown'}`;
+                }
+            });
+        }
+
+        // Update active repairs list
+        function updateActiveRepairsList() {
+            const activeRepairsList = document.getElementById('active-repairs-list');
+            if (!activeRepairsList) return;
+
+            // Get active repairs from backend
+            fetch('/api/active-repairs')
+                .then(response => response.json())
+                .then(data => {
+                    const repairs = data.active_repairs || [];
+
+                    if (repairs.length === 0) {
+                        activeRepairsList.innerHTML = '<p>No active repairs at this time</p>';
+                        return;
+                    }
+
+                    let html = '';
+                    repairs.forEach(repair => {
+                        html += `
+                            <div class="notification ${repair.status === 'completed' ? 'resolved' : repair.status === 'in_progress' ? 'repair' : ''}">
+                                <strong>Repair ${repair.id}</strong>
+                                <p>Pole: ${repair.pole_id} (${repair.pole_area})</p>
+                                <p>Reason: ${repair.break_reason || 'Unknown'}</p>
+                                <p>Status: ${repair.status}</p>
+                                <p>Started: ${new Date(repair.start_time).toLocaleString()}</p>
+                            </div>
+                        `;
+                    });
+
+                    activeRepairsList.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error fetching active repairs:', error);
+                    activeRepairsList.innerHTML = '<p>Error loading active repairs</p>';
+                });
+        }
+
+        // Update repair tracker
+        function updateRepairTracker(stage) {
+            const steps = document.querySelectorAll('.tracker-step');
+
+            // Reset all steps
+            steps.forEach(step => {
+                const indicator = step.querySelector('.step-indicator');
+                indicator.classList.remove('completed', 'active');
+            });
+
+            // Update based on stage
+            if (stage === 'fault-reported') {
+                steps[0].querySelector('.step-indicator').classList.add('completed');
+                document.querySelector('.tracker-steps + p strong').textContent = 'Fault reported. Waiting for van dispatch.';
+                document.querySelector('.tracker-steps + p + p strong').textContent = 'ETA: -';
+            } else if (stage === 'van-dispatched') {
+                steps[0].querySelector('.step-indicator').classList.add('completed');
+                steps[1].querySelector('.step-indicator').classList.add('active');
+                document.querySelector('.tracker-steps + p strong').textContent = 'Repair van is en route to your area';
+                document.querySelector('.tracker-steps + p + p strong').textContent = 'ETA: 15 minutes';
+            } else if (stage === 'repair-started') {
+                steps[0].querySelector('.step-indicator').classList.add('completed');
+                steps[1].querySelector('.step-indicator').classList.add('completed');
+                steps[2].querySelector('.step-indicator').classList.add('active');
+                document.querySelector('.tracker-steps + p strong').textContent = 'Repair in progress in your area';
+                document.querySelector('.tracker-steps + p + p strong').textContent = 'ETA: 30 minutes';
+            } else if (stage === 'resolved') {
+                steps.forEach(step => {
+                    step.querySelector('.step-indicator').classList.add('completed');
+                });
+                document.querySelector('.tracker-steps + p strong').textContent = 'Power restored in your area';
+                document.querySelector('.tracker-steps + p + p strong').textContent = 'ETA: -';
+            }
+        }
+
+        // View repair map function
+        function viewRepairMap() {
+            switchDashboardSection('network-map');
+        }
+
+        // Simulate random fault
+        function simulateRandomFault() {
+            // Get healthy lines
+            const healthyLines = AppState.lines.filter(line => line.status === 'healthy');
+
+            if (healthyLines.length > 0) {
+                // Select a random line
+                const randomIndex = Math.floor(Math.random() * healthyLines.length);
+                const randomLine = healthyLines[randomIndex];
+
+                // Change status to fault
+                changeLineStatus(randomLine, 'fault');
+            }
+        }
+
+        // Add notification function
+        function addNotification(message, type, dashboard) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+
+            const timestamp = new Date().toLocaleTimeString();
+            notification.innerHTML = `<strong>${message}</strong><p>Time: ${timestamp}</p>`;
+
+            if (dashboard === 'official') {
+                document.getElementById('notifications-container').prepend(notification);
+            } else {
+                document.getElementById('public-notifications-container').prepend(notification);
+            }
+
+            setTimeout(() => {
+                notification.remove();
+            }, 10000);
+        }
+
+        // Send custom alert via WhatsApp
+        async function sendCustomAlert() {
+            const message = document.getElementById('custom-message').value.trim();
+
+            if (!message) {
+                alert('Please enter a message!');
+                return;
+            }
+
+            const success = await sendWhatsAppNotification(`CUSTOM ALERT: ${message}`);
+
+            if (success) {
+                alert('Custom alert sent successfully!');
+                document.getElementById('custom-message').value = '';
+                // Reload notification history
+                loadNotificationHistory();
+            } else {
+                alert('Failed to send custom alert. Please try again.');
+            }
+        }
+
+        // Load notification history
+        async function loadNotificationHistory() {
+            try {
+                const response = await fetch('/notifications');
+                const data = await response.json();
+
+                const historyContainer = document.getElementById('notification-history');
+                historyContainer.innerHTML = '';
+
+                if (data.notifications && data.notifications.length > 0) {
+                    data.notifications.slice(0, 10).forEach(notification => {
+                        const notificationEl = document.createElement('div');
+                        notificationEl.className = 'notification';
+                        notificationEl.innerHTML = `
+                            <strong>${notification.message}</strong>
+                            <p>Time: ${new Date(notification.timestamp).toLocaleString()}</p>
+                            <p>Status: ${notification.status}</p>
+                        `;
+                        historyContainer.appendChild(notificationEl);
+                    });
+                } else {
+                    historyContainer.innerHTML = '<p>No notification history available.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading notification history:', error);
+                document.getElementById('notification-history').innerHTML = '<p>Error loading notification history.</p>';
+            }
+        }
+    </script>
+</body>
+
+</html>
