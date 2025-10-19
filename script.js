@@ -492,8 +492,15 @@
             document.getElementById('logout-btn').addEventListener('click', logout);
             document.getElementById('public-logout-btn').addEventListener('click', logout);
             
-            // Blackout control
-            document.getElementById('trigger-blackout').addEventListener('click', triggerBlackout);
+            // Manual blackout trigger button
+            document.getElementById('manual-blackout-btn').addEventListener('click', showBlackoutModal);
+            
+            // Modal close buttons
+            document.getElementById('cancel-blackout').addEventListener('click', hideBlackoutModal);
+            document.querySelector('.close-modal').addEventListener('click', hideBlackoutModal);
+            
+            // Confirm blackout button
+            document.getElementById('confirm-blackout').addEventListener('click', triggerBlackout);
             
             // View repair map
             document.getElementById('view-repair-map').addEventListener('click', viewRepairMap);
@@ -542,13 +549,36 @@
             AppState.currentUser = null;
         }
         
+        // Show blackout modal
+        function showBlackoutModal() {
+            const modal = document.getElementById('blackout-modal');
+            modal.style.display = 'block';
+            
+            // Set current time as default
+            const now = new Date();
+            const timeString = now.toISOString().slice(0, 16);
+            document.getElementById('break-time').value = timeString;
+        }
+        
+        // Hide blackout modal
+        function hideBlackoutModal() {
+            const modal = document.getElementById('blackout-modal');
+            modal.style.display = 'none';
+        }
+        
         // Trigger blackout function
         function triggerBlackout() {
-            const password = document.getElementById('blackout-password').value;
-            const poleId = document.getElementById('pole-select').value;
+            const password = document.getElementById('break-password').value;
+            const poleId = document.getElementById('break-pole-select').value;
+            const breakReason = document.getElementById('break-reason').value;
             
             if (!poleId) {
                 alert('Please select a pole!');
+                return;
+            }
+            
+            if (!breakReason) {
+                alert('Please enter a break reason!');
                 return;
             }
             
@@ -568,11 +598,18 @@
                     
                     // Add notification
                     const pole = AppState.poles[poleIndex];
-                    addNotification(`Blackout triggered at ${pole.id}, ${pole.area}`, 'fault', 'official');
+                    addNotification(`Blackout triggered at ${pole.id}, ${pole.area} (${breakReason})`, 'fault', 'official');
                     addNotification(`Power outage in your area. Repair team will be dispatched shortly.`, 'fault', 'public');
                     
                     // Update repair tracker
                     updateRepairTracker('fault-reported');
+                    
+                    // Hide modal
+                    hideBlackoutModal();
+                    
+                    // Clear form
+                    document.getElementById('break-reason').value = '';
+                    document.getElementById('break-password').value = '';
                 }
             } else {
                 alert('Incorrect security password!');
