@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awadhpuri Electricity Monitoring</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+   
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="login-form">
+            <h2>Awadhpuri Electricity Monitoring</h2>
+            <div class="user-type-selector">
+                <div class="user-type active" id="public-user">Public User</div>
+                <div class="user-type" id="official-user">Official</div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <button class="btn btn-primary" id="login-btn">Login</button>
+        </div>
+    </div>
+
+    <!-- Officials Dashboard -->
+    <div class="container officials-dashboard hidden">
+        <div class="sidebar">
+            <div class="logo">
+                <h1>GridGuardian</h1>
+                <p>Officials Dashboard</p>
+            </div>
+            <div class="nav-item active" data-section="overview">
+                <i class="fas fa-chart-line"></i> Overview
+            </div>
+            <div class="nav-item" data-section="network-map">
+                <i class="fas fa-map-marked-alt"></i> Network Map
+            </div>
+            <div class="nav-item" data-section="repair-management">
+                <i class="fas fa-tools"></i> Repair Management
+            </div>
+            <div class="nav-item" data-section="analytics">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </div>
+            <div class="nav-item" data-section="blackout-control">
+                <i class="fas fa-bolt"></i> Blackout Control
+            </div>
+            <div class="nav-item" data-section="electricians">
+                <i class="fas fa-user-cog"></i> Electricians
+            </div>
+            <div class="nav-item" data-section="settings">
+                <i class="fas fa-cog"></i> Settings
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h2>Grid Overview - Awadhpuri, Bhopal</h2>
+                <div class="user-info">
+                    <span>Welcome, Official User</span>
+                    <button class="btn btn-danger" id="logout-btn" style="margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+
+            <!-- Overview Section -->
+            <div class="dashboard-section active" id="overview">
+                <div class="map-container">
+                    <div id="official-map"></div>
+                    <div class="legend">
+                        <h4>Line Status</h4>
+                        <div class="legend-item">
+                            <div class="legend-color legend-blue"></div>
+                            <span>Healthy</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-red"></div>
+                            <span>Fault</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-orange"></div>
+                            <span>Repair Ongoing</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notifications-panel">
+                    <h3><i class="fas fa-bell"></i> Recent Fault Notifications</h3>
+                    <div id="notifications-container">
+                        <div class="notification">
+                            <strong>System initialized</strong>
+                            <p>All poles and lines are operational</p>
+                            <p>Time: <span id="current-time"></span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <div class="widget">
+                        <h3><i class="fas fa-tasks"></i> Repair Assignment</h3>
+                        <p>Assign technicians to fault locations</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;" id="view-repair-map">View Repair Map</button>
+                    </div>
+                    <div class="widget">
+                        <h3><i class="fas fa-robot"></i> AI Recommendations</h3>
+                        <ul>
+                            <li>Feeder 2 risk of overload in next 5 days</li>
+                            <li>Pole #2 transformer heating detected</li>
+                            <li>Schedule maintenance for Line L001</li>
+                        </ul>
+                    </div>
+                    <div class="widget">
+                        <h3><i class="fas fa-truck"></i> Repair Van Tracking</h3>
+                        <div id="van-tracking-info">
+                            <p>Van 01: Available at Main Station</p>
+                            <p>Van 02: Available at Sector B</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="blackout-control">
+                    <h3><i class="fas fa-bolt"></i> Blackout Control</h3>
+                    <p>Manually trigger blackout for specific poles</p>
+                    <div class="form-group">
+                        <label for="pole-select">Select Pole</label>
+                        <select id="pole-select" class="form-control">
+                            <option value="">Select a pole</option>
+                            <option value="P001">P001 - Awadhpuri Main Square</option>
+                            <option value="P002">P002 - Sector A</option>
+                            <option value="P003">P003 - Sector B</option>
+                            <option value="P004">P004 - Sector C</option>
+                            <option value="P005">P005 - Sector D</option>
+                            <option value="P006">P006 - Sector E</option>
+                            <option value="P007">P007 - Sector F</option>
+                            <option value="P008">P008 - Sector G</option>
+                            <option value="P009">P009 - Sector H</option>
+                            <option value="P010">P010 - Sector I</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="blackout-password">Security Password</label>
+                        <input type="password" id="blackout-password" placeholder="Enter security password">
+                    </div>
+                    <button class="btn btn-primary" id="trigger-blackout">Trigger Blackout</button>
+                </div>
+            </div>
+
+            <!-- Network Map Section -->
+            <div class="dashboard-section" id="network-map">
+                <h2>Network Map</h2>
+                <div class="map-container">
+                    <div id="network-map-view"></div>
+                </div>
+                <div class="widget" style="margin-top: 20px;">
+                    <h3><i class="fas fa-info-circle"></i> Map Controls</h3>
+                    <p>Click on any line to change its status</p>
+                    <button class="btn btn-primary" id="simulate-fault">Simulate Random Fault</button>
+                </div>
+            </div>
+
+            <!-- Repair Management Section -->
+            <div class="dashboard-section" id="repair-management">
+                <h2>Repair Management</h2>
+                
+                <div class="van-list">
+                    <div class="van-card">
+                        <h4>Van 01 - Repair Team Alpha</h4>
+                        <p><strong>Driver:</strong> Rajesh Kumar</p>
+                        <p><strong>Status:</strong> <span class="status available">Available</span></p>
+                        <p><strong>Current Location:</strong> Main Station</p>
+                    </div>
+                    <div class="van-card">
+                        <h4>Van 02 - Repair Team Beta</h4>
+                        <p><strong>Driver:</strong> Mohan Singh</p>
+                        <p><strong>Status:</strong> <span class="status available">Available</span></p>
+                        <p><strong>Current Location:</strong> Sector B Depot</p>
+                    </div>
+                </div>
+                
+                <div class="widget">
+                    <h3><i class="fas fa-wrench"></i> Dispatch Repair Van</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="van-select">Select Van</label>
+                            <select id="van-select" class="form-control">
+                                <option value="">Select a van</option>
+                                <option value="van01">Van 01 - Repair Team Alpha</option>
+                                <option value="van02">Van 02 - Repair Team Beta</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="faulty-pole">Faulty Pole ID</label>
+                            <select id="faulty-pole" class="form-control">
+                                <option value="">Select a pole</option>
+                                <option value="P001">P001 - Awadhpuri Main Square</option>
+                                <option value="P002">P002 - Sector A</option>
+                                <option value="P003">P003 - Sector B</option>
+                                <option value="P004">P004 - Sector C</option>
+                                <option value="P005">P005 - Sector D</option>
+                                <option value="P006">P006 - Sector E</option>
+                                <option value="P007">P007 - Sector F</option>
+                                <option value="P008">P008 - Sector G</option>
+                                <option value="P009">P009 - Sector H</option>
+                                <option value="P010">P010 - Sector I</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="dispatch-van">Dispatch Van</button>
+                </div>
+                
+                <div class="widget">
+                    <h3><i class="fas fa-clipboard-list"></i> Active Repairs</h3>
+                    <div id="active-repairs-list">
+                        <p>No active repairs at this time</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other sections would be implemented similarly -->
+            <div class="dashboard-section" id="analytics">
+                <h2>Analytics</h2>
+                <div class="widget">
+                    <h3><i class="fas fa-chart-line"></i> Power Consumption Trends</h3>
+                    <p>Analytics data will be displayed here</p>
+                </div>
+            </div>
+
+            <div class="dashboard-section" id="electricians">
+                <h2>Electrician Management</h2>
+                <div class="widget">
+                    <h3><i class="fas fa-users"></i> Available Electricians</h3>
+                    <ul class="electrician-list">
+                        <li>Rajesh Kumar <span class="distance">0.8km away</span></li>
+                        <li>Mohan Singh <span class="distance">1.2km away</span></li>
+                        <li>Ankit Patel <span class="distance">1.5km away</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="dashboard-section" id="settings">
+                <h2>Settings</h2>
+                <div class="widget">
+                    <h3><i class="fas fa-cog"></i> System Settings</h3>
+                    <p>System configuration options will be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Public Dashboard -->
+    <div class="container public-dashboard hidden">
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h2>Awadhpuri Power Network Status</h2>
+                <div class="user-info">
+                    <span>Welcome, Resident</span>
+                    <button class="btn btn-danger" id="public-logout-btn" style="margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+
+            <div class="map-container">
+                <div id="public-map"></div>
+                <div class="legend">
+                    <h4>Line Status</h4>
+                    <div class="legend-item">
+                        <div class="legend-color legend-blue"></div>
+                        <span>Healthy</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-red"></div>
+                        <span>Fault</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-orange"></div>
+                        <span>Repair Ongoing</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="energy-tip">
+                <h3><i class="fas fa-lightbulb"></i> Energy Saving Tip</h3>
+                <p>Turn off unnecessary lights during peak hours (6 PM - 10 PM) to help reduce grid load and earn Green Credits!</p>
+            </div>
+
+            <div class="notifications-panel">
+                <h3><i class="fas fa-bell"></i> Area Notifications</h3>
+                <div id="public-notifications-container">
+                    <div class="notification">
+                        <strong>System initialized</strong>
+                        <p>All power lines are operational in your area</p>
+                        <p>Time: <span id="public-current-time"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="widget">
+                <h3><i class="fas fa-wrench"></i> Repair Tracker</h3>
+                <div class="tracker-steps">
+                    <div class="tracker-step">
+                        <div class="step-indicator">1</div>
+                        <div>Fault Reported</div>
+                    </div>
+                    <div class="tracker-step">
+                        <div class="step-indicator">2</div>
+                        <div>Van Dispatched</div>
+                    </div>
+                    <div class="tracker-step">
+                        <div class="step-indicator">3</div>
+                        <div>Repair Started</div>
+                    </div>
+                    <div class="tracker-step">
+                        <div class="step-indicator">4</div>
+                        <div>Supply Restored</div>
+                    </div>
+                </div>
+                <p><strong>Current Status:</strong> No ongoing repairs in your area</p>
+                <p><strong>ETA:</strong> -</p>
+            </div>
+
+            <div class="control-panel">
+                <div class="widget">
+                    <h3><i class="fas fa-user-cog"></i> Local Electricians</h3>
+                    <ul class="electrician-list">
+                        <li>Rajesh Kumar <span class="distance">0.8km away</span></li>
+                        <li>Mohan Singh <span class="distance">1.2km away</span></li>
+                        <li>Ankit Patel <span class="distance">1.5km away</span></li>
+                    </ul>
+                    <button class="btn btn-primary" style="margin-top: 1rem;">Register as Electrician</button>
+                </div>
+                <div class="widget">
+                    <h3><i class="fas fa-exclamation-circle"></i> Report an Issue</h3>
+                    <p>Notice a problem in your area? Report it quickly</p>
+                    <button class="btn btn-primary" style="margin-top: 1rem;">Report Fault</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="script.js"></script>
+    
+</body>
+</html>
